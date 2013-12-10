@@ -1,11 +1,13 @@
-# Build and Release Folders
-bin/
-bin-debug/
-bin-release/
+### OSX ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
 
-# Other files and folders
-.settings/
+# Thumbnails
+._*
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
