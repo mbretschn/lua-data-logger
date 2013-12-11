@@ -99,7 +99,6 @@ function readsensors()
    wserial:close()
 
    local lines = {}
-   local cnt = 0
    local EOD = false
    rserial=io.open(port,'r')
    while EOD == false do
@@ -126,8 +125,6 @@ function readsensors()
 
                table.insert(lines, data)
                logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
-            else
-               cnt = line
             end
          end
       end)()
