@@ -87,7 +87,7 @@ void readSensors() {
               // calculate the temperature in celsius 
               // convert it to a string and add it to out variable
               celsius = (double) raw / 16.0;
-              char buffer[5];
+              char buffer[16];
               dtostrf(celsius, 0, 2, buffer);
               out += buffer;
 
@@ -108,8 +108,5 @@ void serialEvent() {
       char inChar = (char) Serial.read();
       readSensors();
       Serial.println("EOD");
-      Serial.end();
   }
-  delay(2000);
-  Serial.begin(9600);
 }
