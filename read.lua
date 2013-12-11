@@ -105,7 +105,7 @@ function readsensors()
       if string.sub(line, 0, 3) == "EOD" then
          EOD = true
          rserial:close()
-      elseif #line > 3 then
+      elseif string.byte(line) then
          local datetime = datetime()
          local data = {
             id  = string.sub(line, 0, 16),
