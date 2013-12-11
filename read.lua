@@ -98,38 +98,29 @@ function readsensors()
    wserial:write('1')
    wserial:close()
 
-   local lines = {}
    local EOD = false
    rserial=io.open(port,'r')
-   while EOD == false do
-      (function()
-         line=rserial:read()
-         if string.sub(line, 0, 3) == "EOD" then 
-            EOD = true
-            rserial:close()
-            return;
-         elseif string.byte(line) then
-            if string.len(line) > 16 then
-               local datetime = datetime()
+   repeat
+      local line=rserial:read()
+      if string.sub(line, 0, 3) == "EOD" then
+         EOD = true
+         rserial:close()
+      elseif #line > 3 then
+         local datetime = datetime()
+         local data = {
+            id  = string.sub(line, 0, 16),
+            current_value = tonumber(string.sub(line, 17)),
+         }
 
-               local data = {
-                  id  = string.sub(line, 0, 16),
-                  current_value = tonumber(string.sub(line, 17)),
-               }
-
-               -- glitch
-               if not chk_crc8(data.id, 7) or data.current_value > 85 then
-                  logfile ("glitches.log", datetime.date .. " " .. datetime.time .. " " .. line)
-                  return
-               end
-
-               table.insert(lines, data)
-               logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
-            end
+         -- glitch
+         if not chk_crc8(data.id, 7) or data.current_value > 85 then
+            logfile ("glitches.log", datetime.date .. " " .. datetime.time .. " " .. line)
+            return
          end
-      end)()
-   end
-   return lines
+
+         logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
+      end
+   until EOD == true
 end
 
 -- call the readsensor() function and exit
