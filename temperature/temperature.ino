@@ -102,11 +102,14 @@ void readSensors() {
 // main event of programm
 // if a reading is identified on the serial port, start readSensors() function
 // end the serial communication (so that the other side recognize it) and 
-// restart it after 2 seconds.
+// restart it after a second.
 void serialEvent() {
    while (Serial.available()) {
       char inChar = (char) Serial.read();
       readSensors();
       Serial.println("EOD");
+      Serial.end();
   }
+  delay(1000);
+  Serial.begin(9600);
 }

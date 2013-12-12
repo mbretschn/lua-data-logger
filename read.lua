@@ -1,5 +1,7 @@
 -- This simple LUA script is used for logging serial port data send by an Arduino to a OpenWRT router
 
+-- add the path where includes could be found
+local packages = '/root'
 -- adress of the serial port where the arduino is connected
 local port = '/dev/tts/1'
 -- path where to write logfiles
@@ -28,17 +30,24 @@ local dscrc_table = {
    116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
 }
 
--- load hex (bit) library
-require 'hex'
+-- expand package.path
+package.path = package.path .. ';' .. packages .. '/?.lua'
+
+-- load bit and hex library
+require('bit')
+require('hex')
 
 -- check crc8 value for a given rom id
 --
 -- rom      string  - a string with the rom in hexadecimal form
--- len      int     - length of the id (without checksum)
 --
 -- returns  boolean - true or false if checksum matches
 --
-function chk_crc8(rom, len)
+function chk_crc8(rom)
+   if not rom or #rom < 16 then
+      return false
+   end
+
    local data = {}
    local c = 1
    while c < 16 do
@@ -48,10 +57,10 @@ function chk_crc8(rom, len)
    end
 
    crc = 0;
-   for i = 1, len, 1 do
+   for i = 1, 7, 1 do
       crc = dscrc_table[bit.bxor(crc, hex.to_dec('0x' .. data[i])) + 1]
    end
-   return (crc == hex.to_dec('0x' .. data[len + 1]))
+   return (crc == hex.to_dec('0x' .. data[8]))
 end
 
 -- returns a table with current date and time
@@ -101,24 +110,21 @@ function readsensors()
    local EOD = false
    rserial=io.open(port,'r')
    repeat
-      local line=rserial:read()
+      local line=rserial:read('*l')
       if string.sub(line, 0, 3) == "EOD" then
          EOD = true
          rserial:close()
-      elseif string.byte(line) then
+      elseif line then
          local datetime = datetime()
          local data = {
             id  = string.sub(line, 0, 16),
-            current_value = tonumber(string.sub(line, 17)),
+            current_value = tonumber(string.sub(line, 17))
          }
-
-         -- glitch
-         if not chk_crc8(data.id, 7) or data.current_value > 85 then
+         if chk_crc8(data.id) then
+            logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
+         else
             logfile ("glitches.log", datetime.date .. " " .. datetime.time .. " " .. line)
-            return
          end
-
-         logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
       end
    until EOD == true
 end
