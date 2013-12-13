@@ -36,7 +36,6 @@ package.path = package.path .. ';' .. packages .. '/?.lua;' .. packages .. '/plu
 -- load bit and hex library
 require('bit')
 require('hex')
-printr = require('printr')
 
 -- check crc8 value for a given rom id
 --
@@ -132,12 +131,12 @@ function readsensors()
    return lines
 end
 
--- call the readsensor() function and exit
+-- call the readsensor() function
 local data = readsensors()
 -- search for enabled plugins
 for filename in io.popen('ls "'..packages..'/plugins" | grep -v ".disabled" | sed -e "s/\.[a-zA-Z]*$//"'):lines() do
    local p = require (filename)
-   p.send(data, data_path)
+   p:send(data, data_path)
 end
 
 os.exit()

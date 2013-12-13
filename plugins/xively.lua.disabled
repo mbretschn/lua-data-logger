@@ -9,40 +9,51 @@
 -- http://json.luaforge.net/
 --
 local xively = {
-	-- add xively API Endpoint
-	url = '',
-	-- add xively API Key here
-	api_key = ''
+   -- add xively API Endpoint
+   url = '',
+   -- add xively API Key here
+   api_key = ''
 }
 
 local json  = require("json")
 local http  = require("socket.http")
 local ltn12 = require("ltn12")
 
-function xively.send(data, data_path) 
-	local result = { 
-		version = "1.0.0", 
-		datastreams = data
-	}
+function xively:send(data, data_path) 
+   local result = { 
+      version = "1.0.0",
+      datastreams = { }
+   }
 
-	local request_body = json.encode(result)
+   for i, v in ipairs(data) do
+      result.datastreams[i] = {
+         id = v.id,
+         datapoints = { }
+      }
+      result.datastreams[i].datapoints[1] = {
+         value = v.current_value,
+         at = v.datetime.date .. "T" .. v.datetime.time .. "Z"
+      }
+   end     
 
-	local header = { 
-		["X-ApiKey"] = xively.api_key,
-		["Content-Length"] = #request_body
-	}
+   local request_body = json.encode(result)
 
-	local response, b, c, h = http.request{
-		url     = xively.url, 
-		headers = header,
-		method  = "PUT",
-		source  = ltn12.source.string(request_body)
-	}
+   local header = { 
+      ["X-ApiKey"] = self.api_key,
+      ["Content-Length"] = #request_body
+   }
 
-	if h ~= "HTTP/1.1 200 OK" then
-		local datetime = datetime()
-		logfile ("xively_http.log", datetime.date .. " " .. datetime.time .. " xively: " .. h, data_path)
-	end
+   local response, b, c, h = http.request{
+      url     = self.url, 
+      headers = header,
+      method  = "PUT",
+      source  = ltn12.source.string(request_body)
+   }
+
+   if h ~= "HTTP/1.1 200 OK" then
+      local datetime = datetime()
+      logfile ("xively_http.log", datetime.date .. " " .. datetime.time .. " xively: " .. h, data_path)
+   end
 end
 
 return xively
