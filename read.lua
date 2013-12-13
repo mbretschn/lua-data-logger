@@ -5,7 +5,7 @@ local packages = '/root'
 -- adress of the serial port where the arduino is connected
 local port = '/dev/tts/1'
 -- path where to write logfiles
-local path = '/tmp/tempdata'
+local data_path = '/tmp/tempdata'
 
 -- table with 1-wire CRC Lookup values
 -- This table comes from Dallas sample code where it is freely reusable,
@@ -31,11 +31,12 @@ local dscrc_table = {
 }
 
 -- expand package.path
-package.path = package.path .. ';' .. packages .. '/?.lua'
+package.path = package.path .. ';' .. packages .. '/?.lua;' .. packages .. '/plugins/?.lua'
 
 -- load bit and hex library
 require('bit')
 require('hex')
+printr = require('printr')
 
 -- check crc8 value for a given rom id
 --
@@ -81,7 +82,7 @@ end
 -- fname    string  - name of file to write to
 -- line     string  - string to write to file
 --
-function logfile(fname, line)
+function logfile(fname, line, path)
    os.execute( "mkdir -p " .. path )
    local filename = path .. "/" .. fname
    local f = io.open(filename ,"r")
@@ -107,6 +108,7 @@ function readsensors()
    wserial:write('1')
    wserial:close()
 
+   local lines = {}
    local EOD = false
    rserial=io.open(port,'r')
    repeat
@@ -115,20 +117,27 @@ function readsensors()
          EOD = true
          rserial:close()
       elseif line then
-         local datetime = datetime()
          local data = {
+            datetime = datetime(),
             id  = string.sub(line, 0, 16),
             current_value = tonumber(string.sub(line, 17))
          }
          if chk_crc8(data.id) then
-            logfile (datetime.date .. ".dat", datetime.time .. " " .. data.id .. " " .. data.current_value)
+            table.insert(lines, data)
          else
-            logfile ("glitches.log", datetime.date .. " " .. datetime.time .. " " .. line)
+            logfile ("glitches.log", data.datetime.date .. " " .. data.datetime.time .. " " .. line, data_path)
          end
       end
    until EOD == true
+   return lines
 end
 
 -- call the readsensor() function and exit
-readsensors()
-os.exit() 
+local data = readsensors()
+-- search for enabled plugins
+for filename in io.popen('ls "'..packages..'/plugins" | grep -v ".disabled" | sed -e "s/\.[a-zA-Z]*$//"'):lines() do
+   local p = require (filename)
+   p.send(data, data_path)
+end
+
+os.exit()

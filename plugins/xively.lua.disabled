@@ -1,0 +1,48 @@
+-- Plugin for read.lua
+-- send sensor data to xively
+--
+-- The plugin must be configured with a xively API endpoint and an API Key.
+--
+-- The xively plugin requires luasocket
+-- http://luasocket.luaforge.net/
+-- and JSON4Lua
+-- http://json.luaforge.net/
+--
+local xively = {
+	-- add xively API Endpoint
+	url = '',
+	-- add xively API Key here
+	api_key = ''
+}
+
+local json  = require("json")
+local http  = require("socket.http")
+local ltn12 = require("ltn12")
+
+function xively.send(data, data_path) 
+	local result = { 
+		version = "1.0.0", 
+		datastreams = data
+	}
+
+	local request_body = json.encode(result)
+
+	local header = { 
+		["X-ApiKey"] = xively.api_key,
+		["Content-Length"] = #request_body
+	}
+
+	local response, b, c, h = http.request{
+		url     = xively.url, 
+		headers = header,
+		method  = "PUT",
+		source  = ltn12.source.string(request_body)
+	}
+
+	if h ~= "HTTP/1.1 200 OK" then
+		local datetime = datetime()
+		logfile ("xively_http.log", datetime.date .. " " .. datetime.time .. " xively: " .. h, data_path)
+	end
+end
+
+return xively

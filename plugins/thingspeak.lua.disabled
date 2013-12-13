@@ -1,0 +1,55 @@
+-- Plugin for read.lua
+-- send sensor data to xively
+--
+-- The plugin must be configured with a thingspeak API Key and the list of 
+-- sensor ids to the corresponding fields.
+--
+-- The thinkspeak plugin requires luasocket
+-- http://luasocket.luaforge.net/
+--
+local thingspeak = {
+	-- edit thinkspeak API Entpoint is needed
+	url = 'http://api.thingspeak.com/update',
+	-- add thinkspeak Write API Key here
+	api_key = '',
+	-- add a list of sensor ids. These are later mapped 
+	-- to the field{n} keys for thinkspeak
+   fields = {
+		'{sensorid_1}',
+		'{sensorid_2}',
+		'...'
+	}
+}
+
+local http  = require("socket.http")
+local ltn12 = require("ltn12")
+
+function thingspeak.send(data, data_path) 
+	local request_body = ""
+	for i, v in ipairs(data) do
+		for k, f in pairs(thingspeak.fields) do
+			if f == v.id then
+				request_body = request_body .. ("field" .. k .. "=" .. v.current_value) .. "&"
+			end
+		end	
+	end
+
+	local header = { 
+		["X-THINGSPEAKAPIKEY"] = thingspeak.api_key,
+		["Content-Length"] = #request_body
+	}
+
+	local response, b, c, h = http.request{
+		url     = thingspeak.url,
+		headers = header,
+		method  = "POST",
+		source  = ltn12.source.string(request_body)
+	}
+
+	if response ~= 1 then
+		local datetime = datetime()
+		logfile ("thinkspeak_http.log", datetime.date .. " " .. datetime.time .. " thingspeak: " .. h, data_path)
+	end
+end
+
+return thingspeak
