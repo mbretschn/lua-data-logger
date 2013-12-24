@@ -1,5 +1,5 @@
 -- Plugin for read.lua
--- send sensor data to xively
+-- send sensor data to thingspeak
 --
 -- The plugin must be configured with a thingspeak API Key and the list of 
 -- sensor ids to the corresponding fields.

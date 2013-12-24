@@ -1,7 +1,7 @@
 -- This simple LUA script is used for logging serial port data send by an Arduino to a OpenWRT router
 
 -- add the path where includes could be found
-local packages = '/root'
+local packages = '/root/lua-data-logger'
 -- adress of the serial port where the arduino is connected
 local port = '/dev/tts/1'
 -- path where to write logfiles
@@ -34,8 +34,8 @@ local dscrc_table = {
 package.path = package.path .. ';' .. packages .. '/?.lua;' .. packages .. '/plugins/?.lua'
 
 -- load bit and hex library
-require('bit')
-require('hex')
+bit = require('bit')
+hex = require('hex')
 
 -- check crc8 value for a given rom id
 --
